@@ -25,7 +25,7 @@ func OpenVideoDevice(path string) (VideoDevice, error) {
 		return nil, err
 	}
 
-	var dev device = device{file, v4l2Capability{cap}}
+	var dev device = device{file, v4l2Capability{cap}, supportedFormats{file}}
 
 	if !dev.Capability().HasCapability(v4l2.V4L2_CAP_VIDEO_CAPTURE) {
 		return nil, errors.New(fmt.Sprintf("Device %s is not a video capturing device.", dev.Name()))
@@ -39,9 +39,14 @@ func OpenVideoDevice(path string) (VideoDevice, error) {
 	return dev, nil
 }
 
+//-------------------------------------------------------------------------
+//MAIN INTERFACE
+//-------------------------------------------------------------------------
+
 type VideoDevice interface {
 	Name() string
 	Capability() Capability
+	Formats() SupportedFormats
 	Close()
 }
 
@@ -51,4 +56,8 @@ type Capability interface {
 	BusInfo() string
 	Version() uint32
 	HasCapability(cap uint32) bool
+}
+
+type SupportedFormats interface {
+	Supports(bufType uint32, format uint32) bool, error
 }

@@ -8,6 +8,7 @@ import (
 type device struct {
 	file       *os.File
 	capability v4l2Capability
+	formats    supportedFormats
 }
 
 func (d device) Name() string {
@@ -16,6 +17,10 @@ func (d device) Name() string {
 
 func (d device) Capability() Capability {
 	return d.capability
+}
+
+func (d device) Formats() SupportedFormats {
+	return d.supportedFormats
 }
 
 func (d device) Close() {

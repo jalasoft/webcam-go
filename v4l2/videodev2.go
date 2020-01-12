@@ -50,3 +50,41 @@ const (
 
 	V4L2_CAP_DEVICE_CAPS = 0x80000000 /* sets device capabilities field */
 )
+
+/*
+ *	F O R M A T   E N U M E R A T I O N
+ */
+type V4l2Fmtdesc struct {
+	Index       uint32 /* Format number      */
+	Typ         uint32 /* enum v4l2_buf_type */
+	Flags       uint32
+	Description [32]uint8 /* Description string */
+	Pixelformat uint32    /* Format fourcc      */
+	Reserved    [4]uint32
+}
+
+const (
+	V4L2_BUF_TYPE_VIDEO_CAPTURE        = 1
+	V4L2_BUF_TYPE_VIDEO_OUTPUT         = 2
+	V4L2_BUF_TYPE_VIDEO_OVERLAY        = 3
+	V4L2_BUF_TYPE_VBI_CAPTURE          = 4
+	V4L2_BUF_TYPE_VBI_OUTPUT           = 5
+	V4L2_BUF_TYPE_SLICED_VBI_CAPTURE   = 6
+	V4L2_BUF_TYPE_SLICED_VBI_OUTPUT    = 7
+	V4L2_BUF_TYPE_VIDEO_OUTPUT_OVERLAY = 8
+	V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE = 9
+	V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE  = 10
+	V4L2_BUF_TYPE_SDR_CAPTURE          = 11
+	V4L2_BUF_TYPE_SDR_OUTPUT           = 12
+	/* Deprecated, do not use */
+	V4L2_BUF_TYPE_PRIVATE = 0x80
+)
+
+func v4l2_fourcc(a uint32, b uint32, c uint32, d uint32) uint32 {
+	return (a | (b << 8) | (c << 16) | (d << 24))
+}
+
+/*      Pixel format         FOURCC                          depth  Description  */
+
+/* RGB formats */
+var V4L2_PIX_FMT_RGB332 uint32 = v4l2_fourcc('R', 'G', 'B', '1') /*  8  RGB-3-3-2     */
