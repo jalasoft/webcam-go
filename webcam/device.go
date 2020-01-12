@@ -3,12 +3,19 @@ package webcam
 import (
 	"log"
 	"os"
-	"v4l2"
 )
 
 type device struct {
 	file       *os.File
-	capability v4l2.V4l2Capability
+	capability v4l2Capability
+}
+
+func (d device) Name() string {
+	return d.file.Name()
+}
+
+func (d device) Capability() Capability {
+	return d.capability
 }
 
 func (d device) Close() {
