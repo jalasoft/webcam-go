@@ -19,13 +19,13 @@ func OpenVideoDevice(path string) (VideoDevice, error) {
 	}
 
 	log.Println("Reading capability")
-	cap, err := ioctl.ReadCapability(file.Fd())
+	cap, err := ioctl.QueryCapability(file.Fd())
 
 	if err != nil {
 		return nil, err
 	}
 
-	var dev device = device{file, v4l2Capability{cap}, supportedFormats{file}}
+	var dev *device = &device{file, v4l2Capability{cap}, supportedFormats{file}}
 
 	if !dev.Capability().HasCapability(v4l2.V4L2_CAP_VIDEO_CAPTURE) {
 		return nil, errors.New(fmt.Sprintf("Device %s is not a video capturing device.", dev.Name()))
@@ -59,5 +59,5 @@ type Capability interface {
 }
 
 type SupportedFormats interface {
-	Supports(bufType uint32, format uint32) bool, error
+	Supports(bufType uint32, format uint32) (bool, error)
 }

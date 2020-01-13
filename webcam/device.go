@@ -11,19 +11,19 @@ type device struct {
 	formats    supportedFormats
 }
 
-func (d device) Name() string {
+func (d *device) Name() string {
 	return d.file.Name()
 }
 
-func (d device) Capability() Capability {
+func (d *device) Capability() Capability {
 	return d.capability
 }
 
-func (d device) Formats() SupportedFormats {
-	return d.supportedFormats
+func (d *device) Formats() SupportedFormats {
+	return d.formats
 }
 
-func (d device) Close() {
+func (d *device) Close() {
 	log.Printf("Closing video device.\n")
 	d.file.Close()
 }
