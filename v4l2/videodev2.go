@@ -1,5 +1,9 @@
 package v4l2
 
+import (
+	"unsafe"
+)
+
 type V4l2Capability struct {
 	Driver       [16]uint8
 	Card         [32]uint8
@@ -276,3 +280,47 @@ var V4L2_PIX_FMT_PRIV_MAGIC uint32 = 0xfeedcafe
 
 /* Flags */
 var V4L2_PIX_FMT_FLAG_PREMUL_ALPHA uint32 = 0x00000001
+
+type V4l2Frmsizeenum struct {
+	index        uint32 /* Frame size number */
+	pixel_format uint32 /* Pixel format */
+	typ          uint32 /* Frame size type the device supports. */
+
+	data [6]uint32
+
+	/*
+		union {
+			struct v4l2_frmsize_discrete	discrete;
+			struct v4l2_frmsize_stepwise	stepwise;
+		};*/
+
+	reserved [2]uint32 /* Reserved space for future use */
+}
+
+func (f V4l2Frmsizeenum) Discrete() V4l2Frmsize_discrete {
+	ptr := uintptr(unsafe.Pointer(&f))
+	ptr += 24 /*skip index, pixel_format and type*/
+
+	return *(*V4l2Frmsize_discrete)(unsafe.Pointer(ptr))
+}
+
+func (f V4l2Frmsizeenum) Stepwise() V4l2Frmsize_discrete {
+	ptr := uintptr(unsafe.Pointer(&f))
+	ptr += 24 /*skip index, pixel_format and type*/
+
+	return *(*V4l2Frmsize_discrete)(unsafe.Pointer(ptr))
+}
+
+type V4l2Frmsize_discrete struct {
+	width  uint32 /* Frame width [pixel] */
+	height uint32 /* Frame height [pixel] */
+}
+
+type V4l2Frmsize_stepwise struct {
+	min_width   uint32 /* Minimum frame width [pixel] */
+	max_width   uint32 /* Maximum frame width [pixel] */
+	step_width  uint32 /* Frame width step size [pixel] */
+	min_height  uint32 /* Minimum frame height [pixel] */
+	max_height  uint32 /* Maximum frame height [pixel] */
+	step_height uint32 /* Frame height step size [pixel] */
+}
