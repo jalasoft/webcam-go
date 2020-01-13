@@ -9,7 +9,7 @@ import (
 
 func main() {
 	//printCapability("/dev/video0")
-	printFormatSupport("/dev/video0")
+	//printFormatSupport("/dev/video0")
 }
 
 func printFormatSupport(path string) {
