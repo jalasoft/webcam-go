@@ -8,9 +8,24 @@ import (
 )
 
 func main() {
-	printAllFrameSizes("/dev/video0")
+	takeSnapshot("/dev/video0")
+	//printAllFrameSizes("/dev/video0")
 	//printCapability("/dev/video0")
 	//printFormatSupport("/dev/video0")
+}
+
+func takeSnapshot(file string) {
+	device, err := webcam.OpenVideoDevice(file)
+
+	if err != nil {
+		log.Fatalf("%v\n", err)
+	}
+
+	defer device.Close()
+
+	snapshot := device.Snapshot()
+
+	snapshot.Take(webcam.DiscreteFrameSize{725, 368})
 }
 
 func printAllFrameSizes(file string) {

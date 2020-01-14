@@ -10,6 +10,7 @@ type device struct {
 	capability v4l2Capability
 	formats    supportedFormats
 	framesizes *framesizes
+	snapshot   *snapshot
 }
 
 func (d *device) Name() string {
@@ -26,6 +27,10 @@ func (d *device) Formats() SupportedFormats {
 
 func (d *device) FrameSizes() FrameSizes {
 	return d.framesizes
+}
+
+func (d *device) Snapshot() Snapshot {
+	return d.snapshot
 }
 
 func (d *device) Close() {
