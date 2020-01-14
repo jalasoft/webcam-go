@@ -25,7 +25,7 @@ func OpenVideoDevice(path string) (VideoDevice, error) {
 		return nil, err
 	}
 
-	var dev *device = &device{file, v4l2Capability{cap}, supportedFormats{file}}
+	var dev *device = &device{file, v4l2Capability{cap}, supportedFormats{file}, &framesizes{file}}
 
 	if !dev.Capability().HasCapability(v4l2.V4L2_CAP_VIDEO_CAPTURE) {
 		return nil, errors.New(fmt.Sprintf("Device %s is not a video capturing device.", dev.Name()))
@@ -47,6 +47,7 @@ type VideoDevice interface {
 	Name() string
 	Capability() Capability
 	Formats() SupportedFormats
+	FrameSizes() FrameSizes
 	Close()
 }
 
@@ -60,4 +61,18 @@ type Capability interface {
 
 type SupportedFormats interface {
 	Supports(bufType uint32, format uint32) (bool, error)
+}
+
+type FrameSizes interface {
+	AllDiscrete(format uint32) ([]DiscreteFrameSize, error)
+	SupportsDiscrete(format uint32, width uint32, height uint32) (bool, error)
+}
+
+type DiscreteFrameSize struct {
+	Width  uint32
+	Height uint32
+}
+
+func (d DiscreteFrameSize) String() string {
+	return fmt.Sprintf("DiscreteFrame[%dx%d]", d.Width, d.Height)
 }

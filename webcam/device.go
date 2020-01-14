@@ -9,6 +9,7 @@ type device struct {
 	file       *os.File
 	capability v4l2Capability
 	formats    supportedFormats
+	framesizes *framesizes
 }
 
 func (d *device) Name() string {
@@ -21,6 +22,10 @@ func (d *device) Capability() Capability {
 
 func (d *device) Formats() SupportedFormats {
 	return d.formats
+}
+
+func (d *device) FrameSizes() FrameSizes {
+	return d.framesizes
 }
 
 func (d *device) Close() {

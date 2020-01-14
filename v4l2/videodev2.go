@@ -281,10 +281,20 @@ var V4L2_PIX_FMT_PRIV_MAGIC uint32 = 0xfeedcafe
 /* Flags */
 var V4L2_PIX_FMT_FLAG_PREMUL_ALPHA uint32 = 0x00000001
 
+/* Frame Size and frame rate enumeration */
+/*
+ *	F R A M E   S I Z E   E N U M E R A T I O N
+ */
+const (
+	V4L2_FRMSIZE_TYPE_DISCRETE   = 1
+	V4L2_FRMSIZE_TYPE_CONTINUOUS = 2
+	V4L2_FRMSIZE_TYPE_STEPWISE   = 3
+)
+
 type V4l2Frmsizeenum struct {
-	index        uint32 /* Frame size number */
-	pixel_format uint32 /* Pixel format */
-	typ          uint32 /* Frame size type the device supports. */
+	Index       uint32 /* Frame size number */
+	PixelFormat uint32 /* Pixel format */
+	Type        uint32 /* Frame size type the device supports. */
 
 	data [6]uint32
 
@@ -299,7 +309,7 @@ type V4l2Frmsizeenum struct {
 
 func (f V4l2Frmsizeenum) Discrete() V4l2Frmsize_discrete {
 	ptr := uintptr(unsafe.Pointer(&f))
-	ptr += 24 /*skip index, pixel_format and type*/
+	ptr += 12 /*skip index, pixel_format and type*/
 
 	return *(*V4l2Frmsize_discrete)(unsafe.Pointer(ptr))
 }
@@ -312,15 +322,58 @@ func (f V4l2Frmsizeenum) Stepwise() V4l2Frmsize_discrete {
 }
 
 type V4l2Frmsize_discrete struct {
-	width  uint32 /* Frame width [pixel] */
-	height uint32 /* Frame height [pixel] */
+	Width  uint32 /* Frame width [pixel] */
+	Height uint32 /* Frame height [pixel] */
 }
 
 type V4l2Frmsize_stepwise struct {
-	min_width   uint32 /* Minimum frame width [pixel] */
-	max_width   uint32 /* Maximum frame width [pixel] */
-	step_width  uint32 /* Frame width step size [pixel] */
-	min_height  uint32 /* Minimum frame height [pixel] */
-	max_height  uint32 /* Maximum frame height [pixel] */
-	step_height uint32 /* Frame height step size [pixel] */
+	Min_width   uint32 /* Minimum frame width [pixel] */
+	Max_width   uint32 /* Maximum frame width [pixel] */
+	Step_width  uint32 /* Frame width step size [pixel] */
+	Min_height  uint32 /* Minimum frame height [pixel] */
+	Max_height  uint32 /* Maximum frame height [pixel] */
+	Step_height uint32 /* Frame height step size [pixel] */
+}
+
+/**
+ * struct v4l2_format - stream data format
+ * @type:	enum v4l2_buf_type; type of the data stream
+ * @pix:	definition of an image format
+ * @pix_mp:	definition of a multiplanar image format
+ * @win:	definition of an overlaid image
+ * @vbi:	raw VBI capture or output parameters
+ * @sliced:	sliced VBI capture or output parameters
+ * @raw_data:	placeholder for future extensions and custom formats
+ */
+type V4l2Format struct {
+	typ uint32
+
+	data [200]byte
+	//union {
+	//	struct v4l2_pix_format		pix;     /* V4L2_BUF_TYPE_VIDEO_CAPTURE */
+	//	struct v4l2_pix_format_mplane	pix_mp;  /* V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE */
+	//	struct v4l2_window		win;     /* V4L2_BUF_TYPE_VIDEO_OVERLAY */
+	//	struct v4l2_vbi_format		vbi;     /* V4L2_BUF_TYPE_VBI_CAPTURE */
+	//	struct v4l2_sliced_vbi_format	sliced;  /* V4L2_BUF_TYPE_SLICED_VBI_CAPTURE */
+	//	struct v4l2_sdr_format		sdr;     /* V4L2_BUF_TYPE_SDR_CAPTURE */
+	//	__u8	raw_data[200];                   /* user-defined */
+	//} fmt;
+}
+
+/*
+ *	V I D E O   I M A G E   F O R M A T
+ */
+type V4l2PixFormat struct {
+	Width        uint32
+	Height       uint32
+	Pixelformat  uint32
+	Field        uint32 /* enum v4l2_field */
+	Bytesperline uint32 /* for padding, zero if unused */
+	Sizeimage    uint32
+	Colorspace   uint32 /* enum v4l2_colorspace */
+	Priv         uint32 /* private data, depends on pixelformat */
+	Flags        uint32 /* format flags (V4L2_PIX_FMT_FLAG_*) */
+	Uycbcr_enc   uint32 /* enum v4l2_ycbcr_encoding */
+	Uantization  uint32 /* enum v4l2_quantization */
+	Xfer_func    uint32 /* enum v4l2_xfer_func */
 }
