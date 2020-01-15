@@ -411,3 +411,76 @@ type V4l2PixFormat struct {
 	Uantization  uint32 /* enum v4l2_quantization */
 	Xfer_func    uint32 /* enum v4l2_xfer_func */
 }
+
+/*
+ *	M E M O R Y - M A P P I N G   B U F F E R S
+ */
+type V4l2RequestBuffers struct {
+	Count    uint32
+	Type     uint32 /* enum v4l2_buf_type */
+	Memory   uint32 /* enum v4l2_memory */
+	Reserved [2]uint32
+}
+
+/*v4l2_buf_type*/
+const (
+	V4L2_MEMORY_MMAP    = 1
+	V4L2_MEMORY_USERPTR = 2
+	V4L2_MEMORY_OVERLAY = 3
+	V4L2_MEMORY_DMABUF  = 4
+)
+
+/**
+ * struct v4l2_buffer - video buffer info
+ * @index:	id number of the buffer
+ * @type:	enum v4l2_buf_type; buffer type (type == *_MPLANE for
+ *		multiplanar buffers);
+ * @bytesused:	number of bytes occupied by data in the buffer (payload);
+ *		unused (set to 0) for multiplanar buffers
+ * @flags:	buffer informational flags
+ * @field:	enum v4l2_field; field order of the image in the buffer
+ * @timestamp:	frame timestamp
+ * @timecode:	frame timecode
+ * @sequence:	sequence count of this frame
+ * @memory:	enum v4l2_memory; the method, in which the actual video data is
+ *		passed
+ * @offset:	for non-multiplanar buffers with memory == V4L2_MEMORY_MMAP;
+ *		offset from the start of the device memory for this plane,
+ *		(or a "cookie" that should be passed to mmap() as offset)
+ * @userptr:	for non-multiplanar buffers with memory == V4L2_MEMORY_USERPTR;
+ *		a userspace pointer pointing to this buffer
+ * @fd:		for non-multiplanar buffers with memory == V4L2_MEMORY_DMABUF;
+ *		a userspace file descriptor associated with this buffer
+ * @planes:	for multiplanar buffers; userspace pointer to the array of plane
+ *		info structs for this buffer
+ * @length:	size in bytes of the buffer (NOT its payload) for single-plane
+ *		buffers (when type != *_MPLANE); number of elements in the
+ *		planes array for multi-plane buffers
+ *
+ * Contains data exchanged by application and driver using one of the Streaming
+ * I/O methods.
+ */
+type V4l2Buffer struct {
+	Index     uint32
+	Type      uint32
+	Bytesused uint32
+	Flags     uint32
+	Field     uint32
+	timestamp [8]byte  //struct timeval		timestamp;
+	timecode  [16]byte //struct v4l2_timecode	timecode;
+	Sequence  uint32
+
+	/* memory location */
+	Memory uint32
+	M      [4]byte
+	/*
+		union {
+			__u32           offset;   //4
+			unsigned long   userptr; //4
+			struct v4l2_plane *planes;  //4
+			__s32		fd; //4
+		} m;*/
+	Length    uint32
+	Reserved2 uint32
+	Reserved  uint32
+}

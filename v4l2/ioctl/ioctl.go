@@ -26,7 +26,7 @@ const (
 	VIDIOC_ENUM_FMT        = ((IOC_READ | IOC_WRITE) << IOC_DIR_SHIFT) | (uintptr('V') << IOC_TYPE_SHIFT) | (2 << IOC_NR_SHIFT) | ((unsafe.Sizeof(v4l2.V4l2Fmtdesc{})) << IOC_SIZE_SHIFT)
 	VIDIOC_ENUM_FRAMESIZES = ((IOC_READ | IOC_WRITE) << IOC_DIR_SHIFT) | (uintptr('V') << IOC_TYPE_SHIFT) | (74 << IOC_NR_SHIFT) | ((unsafe.Sizeof(v4l2.V4l2Frmsizeenum{})) << IOC_SIZE_SHIFT)
 	VIDIOC_S_FMT           = ((IOC_READ | IOC_WRITE) << IOC_DIR_SHIFT) | (uintptr('V') << IOC_TYPE_SHIFT) | (5 << IOC_NR_SHIFT) | (unsafe.Sizeof(v4l2.V4l2Format{}) << IOC_SIZE_SHIFT)
-	//VIDIOC_REQBUFS         = ((IOC_READ | IOC_WRITE) << IOC_DIR_SHIFT) | (uintptr('V') << IOC_TYPE_SHIFT) | (8 << IOC_NR_SHIFT) | ((unsafe.Sizeof(V4l2RequestBuffers{})) << IOC_SIZE_SHIFT)
+	VIDIOC_REQBUFS         = ((IOC_READ | IOC_WRITE) << IOC_DIR_SHIFT) | (uintptr('V') << IOC_TYPE_SHIFT) | (8 << IOC_NR_SHIFT) | ((unsafe.Sizeof(v4l2.V4l2RequestBuffers{})) << IOC_SIZE_SHIFT)
 )
 
 func QueryCapability(fd uintptr) (v4l2.V4l2Capability, error) {
@@ -76,6 +76,21 @@ func SetFrameSize(fd uintptr, str *v4l2.V4l2Format) error {
 
 	if r1 > 0 {
 		return errors.New(fmt.Sprintf("Cannot set frame size, ioctl system call returned status %v", r1))
+	}
+
+	if err != 0 {
+		return err
+	}
+
+	return nil
+}
+
+func RequestBuffer(fd uintptr, str *v4l2.V4l2RequestBuffers) error {
+
+	r1, _, err := syscall.Syscall(syscall.SYS_IOCTL, fd, VIDIOC_REQBUFS, uintptr(unsafe.Pointer(str)))
+
+	if r1 > 0 {
+		return errors.New(fmt.Sprintf("Cannot request buffer, ioctl system call returned status %v", r1))
 	}
 
 	if err != 0 {
