@@ -25,7 +25,11 @@ func takeSnapshot(file string) {
 
 	snapshot := device.Snapshot()
 
-	snapshot.Take(webcam.DiscreteFrameSize{725, 368})
+	err2 := snapshot.Take(webcam.DiscreteFrameSize{1280, 960})
+
+	if err2 != nil {
+		log.Fatalf("%v\n", err)
+	}
 }
 
 func printAllFrameSizes(file string) {

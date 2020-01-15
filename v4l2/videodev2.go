@@ -92,6 +92,31 @@ func v4l2_fourcc_be(a uint32, b uint32, c uint32, d uint32) uint32 {
 	return (v4l2_fourcc(a, b, c, d) | (1 << 31))
 }
 
+/*
+ *	E N U M S
+ */
+const (
+	V4L2_FIELD_ANY = 0 /* driver can choose from none,
+	top, bottom, interlaced
+	depending on whatever it thinks
+	is approximate ... */
+	V4L2_FIELD_NONE       = 1 /* this device has no fields ... */
+	V4L2_FIELD_TOP        = 2 /* top field only */
+	V4L2_FIELD_BOTTOM     = 3 /* bottom field only */
+	V4L2_FIELD_INTERLACED = 4 /* both fields interlaced */
+	V4L2_FIELD_SEQ_TB     = 5 /* both fields sequential into one
+	buffer, top-bottom order */
+	V4L2_FIELD_SEQ_BT    = 6 /* same as above + bottom-top order */
+	V4L2_FIELD_ALTERNATE = 7 /* both fields alternating into
+	separate buffers */
+	V4L2_FIELD_INTERLACED_TB = 8 /* both fields interlaced, top field
+	first and the top field is
+	transmitted first */
+	V4L2_FIELD_INTERLACED_BT = 9 /* both fields interlaced, top field
+	first and the bottom field is
+	transmitted first */
+)
+
 /*      Pixel format         FOURCC                          depth  Description  */
 
 /* RGB formats */
@@ -346,7 +371,7 @@ type V4l2Frmsize_stepwise struct {
  * @raw_data:	placeholder for future extensions and custom formats
  */
 type V4l2Format struct {
-	typ uint32
+	Type uint32
 
 	data [200]byte
 	//union {
@@ -358,6 +383,15 @@ type V4l2Format struct {
 	//	struct v4l2_sdr_format		sdr;     /* V4L2_BUF_TYPE_SDR_CAPTURE */
 	//	__u8	raw_data[200];                   /* user-defined */
 	//} fmt;
+}
+
+func (f *V4l2Format) SetPixFormat(pixformat *V4l2PixFormat) {
+	structBytes := *(*[48]byte)(unsafe.Pointer(pixformat))
+	destBytes := *(*[204]byte)(unsafe.Pointer(f))
+
+	copy(destBytes[4:], structBytes[:])
+
+	f.Type = V4L2_BUF_TYPE_VIDEO_CAPTURE
 }
 
 /*

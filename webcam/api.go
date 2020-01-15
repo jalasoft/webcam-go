@@ -35,7 +35,7 @@ func OpenVideoDevice(path string) (VideoDevice, error) {
 		return nil, errors.New(fmt.Sprintf("Device %s is not able to stream frames.", dev.Name()))
 	}
 
-	log.Println("Device is a video device")
+	log.Printf("Device %s is a video device", file.Name())
 	return dev, nil
 }
 
@@ -79,5 +79,5 @@ func (d DiscreteFrameSize) String() string {
 }
 
 type Snapshot interface {
-	Take(frameSize DiscreteFrameSize)
+	Take(frameSize DiscreteFrameSize) error
 }
