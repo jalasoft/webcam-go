@@ -30,6 +30,7 @@ const (
 	VIDIOC_QUERYBUF        = ((IOC_READ | IOC_WRITE) << IOC_DIR_SHIFT) | (uintptr('V') << IOC_TYPE_SHIFT) | (9 << IOC_NR_SHIFT) | ((unsafe.Sizeof(v4l2.V4l2Buffer{})) << IOC_SIZE_SHIFT)
 	VIDIOC_STREAMON        = (IOC_WRITE << IOC_DIR_SHIFT) | (uintptr('V') << IOC_TYPE_SHIFT) | (18 << IOC_NR_SHIFT) | ((unsafe.Sizeof(int32(0))) << IOC_SIZE_SHIFT)
 	VIDIOC_STREAMOFF       = (IOC_WRITE << IOC_DIR_SHIFT) | (uintptr('V') << IOC_TYPE_SHIFT) | (19 << IOC_NR_SHIFT) | ((unsafe.Sizeof(int32(0))) << IOC_SIZE_SHIFT)
+	VIDIOC_DQBUF           = (IOC_WRITE << IOC_DIR_SHIFT) | (uintptr('V') << IOC_TYPE_SHIFT) | (17 << IOC_NR_SHIFT) | (unsafe.Sizeof(v4l2.V4l2Buffer{}) << IOC_SIZE_SHIFT)
 )
 
 func QueryCapability(fd uintptr) (v4l2.V4l2Capability, error) {
@@ -122,6 +123,8 @@ func ActivateStreaming(fd uintptr, bufType uint32) error {
 
 	r1, _, err := syscall.Syscall(syscall.SYS_IOCTL, fd, VIDIOC_STREAMON, uintptr(bufType))
 
+	fmt.Printf("%v, %v\n", r1, err)
+
 	if err != 0 {
 		return err
 	}
@@ -143,6 +146,25 @@ func DeactivateStreaming(fd uintptr, bufType uint32) error {
 
 	if r1 != 0 {
 		return errors.New(fmt.Sprintf("Cannot deactivate streaming, ioctl system call returned with status %d\n", r1))
+	}
+
+	return nil
+}
+
+func DequeueBuffer(fd uintptr, buffer *v4l2.V4l2Buffer) error {
+
+	fmt.Println("hfghfdh")
+
+	r1, _, err := syscall.Syscall(syscall.SYS_IOCTL, fd, VIDIOC_DQBUF, uintptr(unsafe.Pointer(buffer)))
+
+	fmt.Printf("%v, %v\n", r1, err)
+
+	if r1 != 0 {
+		return errors.New(fmt.Sprintf("Cannot dequeue buffer, ioctl system call returned with status %d\n", r1))
+	}
+
+	if err != 0 {
+		return err
 	}
 
 	return nil

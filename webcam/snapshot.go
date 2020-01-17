@@ -1,6 +1,7 @@
 package webcam
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"syscall"
@@ -46,16 +47,25 @@ func (s *snapshot) Take(frameSize DiscreteFrameSize) error {
 	}
 
 	log.Println("Activating streaming")
-	s.activateStreaming()
+	if err := s.activateStreaming(); err != nil {
+		return err
+	}
+
+	length, err = s.dequeueBuffer()
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("Delka framu: %d\n", length)
 
 	log.Println("Deactivating streaming")
-	s.deactivateStreaming()
+	if err := s.deactivateStreaming(); err != nil {
+		return err
+	}
 
 	log.Printf("Releasing mapped memory block")
-	err2 := s.munmapBuffer(data)
-
-	if err2 != nil {
-		return err2
+	if err := s.munmapBuffer(data); err != nil {
+		return err
 	}
 
 	return nil
@@ -105,10 +115,25 @@ func (s *snapshot) munmapBuffer(data []byte) error {
 	return syscall.Munmap(data)
 }
 
-func (s *snapshot) activateStreaming() {
-	ioctl.ActivateStreaming(s.file.Fd(), v4l2.V4L2_BUF_TYPE_VIDEO_CAPTURE)
+func (s *snapshot) activateStreaming() error {
+	return ioctl.ActivateStreaming(s.file.Fd(), v4l2.V4L2_BUF_TYPE_VIDEO_CAPTURE)
 }
 
-func (s *snapshot) deactivateStreaming() {
-	ioctl.DeactivateStreaming(s.file.Fd(), v4l2.V4L2_BUF_TYPE_VIDEO_CAPTURE)
+func (s *snapshot) deactivateStreaming() error {
+	return ioctl.DeactivateStreaming(s.file.Fd(), v4l2.V4L2_BUF_TYPE_VIDEO_CAPTURE)
+}
+
+func (s *snapshot) dequeueBuffer() (uint32, error) {
+	var buffer v4l2.V4l2Buffer
+	buffer.Index = uint32(0)
+	buffer.Type = v4l2.V4L2_BUF_TYPE_VIDEO_CAPTURE
+	buffer.Memory = v4l2.V4L2_MEMORY_MMAP
+
+	err := ioctl.DequeueBuffer(s.file.Fd(), &buffer)
+
+	if err != nil {
+		return uint32(0), err
+	}
+
+	return buffer.Length, nil
 }
