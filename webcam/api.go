@@ -10,7 +10,7 @@ import (
 )
 
 func OpenVideoDevice(path string) (VideoDevice, error) {
-	file, err := os.Open(path)
+	file, err := os.OpenFile(path, os.O_RDWR, 0666)
 
 	log.Printf("Opening device %s\n", path)
 

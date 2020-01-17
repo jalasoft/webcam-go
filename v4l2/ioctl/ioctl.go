@@ -27,6 +27,9 @@ const (
 	VIDIOC_ENUM_FRAMESIZES = ((IOC_READ | IOC_WRITE) << IOC_DIR_SHIFT) | (uintptr('V') << IOC_TYPE_SHIFT) | (74 << IOC_NR_SHIFT) | ((unsafe.Sizeof(v4l2.V4l2Frmsizeenum{})) << IOC_SIZE_SHIFT)
 	VIDIOC_S_FMT           = ((IOC_READ | IOC_WRITE) << IOC_DIR_SHIFT) | (uintptr('V') << IOC_TYPE_SHIFT) | (5 << IOC_NR_SHIFT) | (unsafe.Sizeof(v4l2.V4l2Format{}) << IOC_SIZE_SHIFT)
 	VIDIOC_REQBUFS         = ((IOC_READ | IOC_WRITE) << IOC_DIR_SHIFT) | (uintptr('V') << IOC_TYPE_SHIFT) | (8 << IOC_NR_SHIFT) | ((unsafe.Sizeof(v4l2.V4l2RequestBuffers{})) << IOC_SIZE_SHIFT)
+	VIDIOC_QUERYBUF        = ((IOC_READ | IOC_WRITE) << IOC_DIR_SHIFT) | (uintptr('V') << IOC_TYPE_SHIFT) | (9 << IOC_NR_SHIFT) | ((unsafe.Sizeof(v4l2.V4l2Buffer{})) << IOC_SIZE_SHIFT)
+	VIDIOC_STREAMON        = (IOC_WRITE << IOC_DIR_SHIFT) | (uintptr('V') << IOC_TYPE_SHIFT) | (18 << IOC_NR_SHIFT) | ((unsafe.Sizeof(int32(0))) << IOC_SIZE_SHIFT)
+	VIDIOC_STREAMOFF       = (IOC_WRITE << IOC_DIR_SHIFT) | (uintptr('V') << IOC_TYPE_SHIFT) | (19 << IOC_NR_SHIFT) | ((unsafe.Sizeof(int32(0))) << IOC_SIZE_SHIFT)
 )
 
 func QueryCapability(fd uintptr) (v4l2.V4l2Capability, error) {
@@ -95,6 +98,51 @@ func RequestBuffer(fd uintptr, str *v4l2.V4l2RequestBuffers) error {
 
 	if err != 0 {
 		return err
+	}
+
+	return nil
+}
+
+func QueryBuffer(fd uintptr, buffer *v4l2.V4l2Buffer) error {
+
+	r1, _, err := syscall.Syscall(syscall.SYS_IOCTL, fd, VIDIOC_QUERYBUF, uintptr(unsafe.Pointer(buffer)))
+
+	if err != 0 {
+		return err
+	}
+
+	if r1 != 0 {
+		return errors.New(fmt.Sprintf("Cannot query buffer, ioctl system call returned status %v", r1))
+	}
+
+	return nil
+}
+
+func ActivateStreaming(fd uintptr, bufType uint32) error {
+
+	r1, _, err := syscall.Syscall(syscall.SYS_IOCTL, fd, VIDIOC_STREAMON, uintptr(bufType))
+
+	if err != 0 {
+		return err
+	}
+
+	if r1 != 0 {
+		return errors.New(fmt.Sprintf("Cannot activate streaming, ioctl system call returned with status %d\n", r1))
+	}
+
+	return nil
+}
+
+func DeactivateStreaming(fd uintptr, bufType uint32) error {
+
+	r1, _, err := syscall.Syscall(syscall.SYS_IOCTL, fd, VIDIOC_STREAMOFF, uintptr(bufType))
+
+	if err != 0 {
+		return err
+	}
+
+	if r1 != 0 {
+		return errors.New(fmt.Sprintf("Cannot deactivate streaming, ioctl system call returned with status %d\n", r1))
 	}
 
 	return nil

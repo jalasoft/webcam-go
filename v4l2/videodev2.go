@@ -1,6 +1,7 @@
 package v4l2
 
 import (
+	"encoding/binary"
 	"unsafe"
 )
 
@@ -472,7 +473,7 @@ type V4l2Buffer struct {
 
 	/* memory location */
 	Memory uint32
-	M      [4]byte
+	m      [4]byte
 	/*
 		union {
 			__u32           offset;   //4
@@ -483,4 +484,8 @@ type V4l2Buffer struct {
 	Length    uint32
 	Reserved2 uint32
 	Reserved  uint32
+}
+
+func (b V4l2Buffer) Offset() uint32 {
+	return binary.LittleEndian.Uint32(b.m[:])
 }
