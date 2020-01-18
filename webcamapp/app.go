@@ -1,17 +1,52 @@
 package main
 
 import (
+	"os"
 	"fmt"
 	"log"
 	"v4l2"
+	"v4l2/ioctl"
 	"webcam"
+	"encoding/binary"
 )
 
 func main() {
+	//writeBinaryFile()
+	//printConstants()
 	takeSnapshot("/dev/video0")
 	//printAllFrameSizes("/dev/video0")
 	//printCapability("/dev/video0")
 	//printFormatSupport("/dev/video0")
+}
+
+func writeBinaryFile() {
+	file, err := os.Create("/home/honzales/binarka")
+
+	if err != nil {
+		log.Fatalf("%v\n", err)
+	}
+
+	defer file.Close()
+
+	var bindata []byte = []byte{0xaa, 0x12, 0x56}
+
+	file.Write(bindata)
+
+}
+
+func printConstants() {
+	fmt.Printf("VIDIOC_QUERYCAP: %v\n", ioctl.VIDIOC_QUERYCAP)
+	fmt.Printf("VIDIOC_ENUM_FMT: %v\n", ioctl.VIDIOC_ENUM_FMT)
+	fmt.Printf("VIDIOC_ENUM_FRAMESIZES: %v\n", ioctl.VIDIOC_ENUM_FRAMESIZES)
+	fmt.Printf("VIDIOC_S_FMT: %v\n", ioctl.VIDIOC_S_FMT)
+	fmt.Printf("VIDIOC_REQBUFS: %v\n", ioctl.VIDIOC_REQBUFS)
+	fmt.Printf("VIDIOC_QUERYBUF: %v\n", ioctl.VIDIOC_QUERYBUF)
+	fmt.Printf("VIDIOC_STREAMON: %v\n", ioctl.VIDIOC_STREAMON)
+	fmt.Printf("VIDIOC_STREAMOFF: %v\n", ioctl.VIDIOC_STREAMOFF)
+	fmt.Printf("VIDIOC_DQBUF: %v\n", ioctl.VIDIOC_DQBUF)
+	fmt.Printf("VIDIOC_QBUF: %v\n", ioctl.VIDIOC_QBUF)
+
+	fmt.Printf("V4L2_PIX_FMT_MJPEG: %v\n", v4l2.V4L2_PIX_FMT_MJPEG)
 }
 
 func takeSnapshot(file string) {
@@ -23,13 +58,27 @@ func takeSnapshot(file string) {
 
 	defer device.Close()
 
-	snapshot := device.Snapshot()
-
-	err2 := snapshot.Take(webcam.DiscreteFrameSize{1280, 960})
-
-	if err2 != nil {
+	snapshot, err := device.TakeSnapshot(&webcam.DiscreteFrameSize{1280, 960})
+	if err != nil {
 		log.Fatalf("%v\n", err)
 	}
+
+	fmt.Printf("Mam obrazek o velikosti %dB\n", snapshot.Length())
+
+	outfile, err := os.Create("/home/honzales/snapshot.jpg")
+	if err != nil {
+		log.Fatalf("%v\n", err)
+	}
+
+	defer outfile.Close()
+
+	//fmt.Printf("Zapisuju data do souboru\n")
+	
+	//fmt.Printf("%x", snapshot.Data())
+
+	binary.Write(outfile, binary.LittleEndian, snapshot.Data())
+	//fmt.Printf("Hotovo\n")
+
 }
 
 func printAllFrameSizes(file string) {

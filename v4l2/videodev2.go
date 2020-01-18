@@ -3,6 +3,8 @@ package v4l2
 import (
 	"encoding/binary"
 	"unsafe"
+	"fmt"
+	//"bytes"
 )
 
 type V4l2Capability struct {
@@ -387,12 +389,17 @@ type V4l2Format struct {
 }
 
 func (f *V4l2Format) SetPixFormat(pixformat *V4l2PixFormat) {
-	structBytes := *(*[48]byte)(unsafe.Pointer(pixformat))
-	destBytes := *(*[204]byte)(unsafe.Pointer(f))
-
-	copy(destBytes[4:], structBytes[:])
-
+	
 	f.Type = V4L2_BUF_TYPE_VIDEO_CAPTURE
+
+	t := (*V4l2PixFormat)(unsafe.Pointer(&f.data))
+	t.Width = pixformat.Width
+	t.Height = pixformat.Height
+	t.Pixelformat = pixformat.Pixelformat
+	t.Field = pixformat.Field
+	
+	//fff := *(*[204]byte)(unsafe.Pointer(f))
+	//fmt.Printf("%v\n", fff)
 }
 
 /*
@@ -486,6 +493,9 @@ type V4l2Buffer struct {
 	Reserved  uint32
 }
 
-func (b V4l2Buffer) Offset() uint32 {
+func (b *V4l2Buffer) Offset() uint32 {
+
+	fmt.Printf("OO: %v\n", *b)
+
 	return binary.LittleEndian.Uint32(b.m[:])
 }
