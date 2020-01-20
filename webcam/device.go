@@ -10,7 +10,7 @@ type device struct {
 	capability v4l2Capability
 	formats    supportedFormats
 	framesizes *framesizes
-	stillcamera   *stillcamera
+	camera     *camera
 }
 
 func (d *device) Name() string {
@@ -30,7 +30,15 @@ func (d *device) FrameSizes() FrameSizes {
 }
 
 func (d *device) TakeSnapshot(frameSize *DiscreteFrameSize) (Snapshot, error) {
-	return d.stillcamera.TakeSnapshot(frameSize)
+	return d.camera.takeSnapshot(frameSize)
+}
+
+func (d *device) TakeSnapshotAsync(frameSize *DiscreteFrameSize, handler SnapshotHandler) error {
+	return d.camera.takeSnapshotAsync(frameSize, handler)
+}
+
+func (d *device) TakeSnapshotChan(frameSize *DiscreteFrameSize, ch chan Snapshot) {
+	d.camera.takeSnapshotChan(frameSize, ch)
 }
 
 func (d *device) Close() {

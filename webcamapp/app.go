@@ -1,13 +1,12 @@
 package main
 
 import (
-	"os"
 	"fmt"
 	"log"
+	"os"
 	"v4l2"
 	"v4l2/ioctl"
 	"webcam"
-	"encoding/binary"
 )
 
 func main() {
@@ -58,26 +57,44 @@ func takeSnapshot(file string) {
 
 	defer device.Close()
 
-	snapshot, err := device.TakeSnapshot(&webcam.DiscreteFrameSize{1280, 960})
-	if err != nil {
-		log.Fatalf("%v\n", err)
+	ch := make(chan webcam.Snapshot)
+
+	go device.TakeSnapshotChan(&webcam.DiscreteFrameSize{1280, 960}, ch)
+
+	for s := range ch {
+		fmt.Println("Mam snapshot....")
+
+		file, err := os.Create("/home/honzales/cam1.jpg")
+		if err != nil {
+			log.Fatalf("%v\n", err)
+		}
+
+		defer file.Close()
+
+		file.Write(s.Data())
 	}
 
-	fmt.Printf("Mam obrazek o velikosti %dB\n", snapshot.Length())
+	/*
+		snapshot, err := device.TakeSnapshot(&webcam.DiscreteFrameSize{1280, 960})
+		if err != nil {
+			log.Fatalf("%v\n", err)
+		}
 
-	outfile, err := os.Create("/home/honzales/snapshot.jpg")
-	if err != nil {
-		log.Fatalf("%v\n", err)
-	}
+		fmt.Printf("Mam obrazek o velikosti %dB\n", snapshot.Length())
 
-	defer outfile.Close()
+		outfile, err := os.Create("/home/honzales/snapshot.jpg")
+		if err != nil {
+			log.Fatalf("%v\n", err)
+		}
 
-	//fmt.Printf("Zapisuju data do souboru\n")
-	
-	//fmt.Printf("%x", snapshot.Data())
+		defer outfile.Close()
 
-	binary.Write(outfile, binary.LittleEndian, snapshot.Data())
-	//fmt.Printf("Hotovo\n")
+		//fmt.Printf("Zapisuju data do souboru\n")
+
+		//fmt.Printf("%x", snapshot.Data())
+
+		binary.Write(outfile, binary.LittleEndian, snapshot.Data())
+		//fmt.Printf("Hotovo\n")*/
 
 }
 

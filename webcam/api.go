@@ -25,7 +25,7 @@ func OpenVideoDevice(path string) (VideoDevice, error) {
 		return nil, err
 	}
 
-	var dev *device = &device{file, v4l2Capability{cap}, supportedFormats{file}, &framesizes{file}, &stillcamera{file}}
+	var dev *device = &device{file, v4l2Capability{cap}, supportedFormats{file}, &framesizes{file}, &camera{file}}
 
 	if !dev.Capability().HasCapability(v4l2.V4L2_CAP_VIDEO_CAPTURE) {
 		return nil, errors.New(fmt.Sprintf("Device %s is not a video capturing device.", dev.Name()))
@@ -49,6 +49,8 @@ type VideoDevice interface {
 	Formats() SupportedFormats
 	FrameSizes() FrameSizes
 	TakeSnapshot(frameSize *DiscreteFrameSize) (Snapshot, error)
+	TakeSnapshotAsync(frameSize *DiscreteFrameSize, handler SnapshotHandler) error
+	TakeSnapshotChan(frameSize *DiscreteFrameSize, ch chan Snapshot)
 	Close()
 }
 
@@ -83,3 +85,5 @@ type Snapshot interface {
 	Length() uint32
 	Data() []byte
 }
+
+type SnapshotHandler func(snapshot Snapshot)
