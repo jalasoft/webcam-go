@@ -4,48 +4,84 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"time"
 	"v4l2"
-	"v4l2/ioctl"
 	"webcam"
 )
 
 func main() {
 	//writeBinaryFile()
 	//printConstants()
-	takeSnapshot("/dev/video0")
+	streamVideo("/dev/video0")
 	//printAllFrameSizes("/dev/video0")
 	//printCapability("/dev/video0")
 	//printFormatSupport("/dev/video0")
 }
 
-func writeBinaryFile() {
-	file, err := os.Create("/home/honzales/binarka")
+func streamVideo(file string) {
+
+	ticks := make(chan bool, 10)
+	snaps := make(chan webcam.Snapshot)
+
+	go streamSnapshots(file, ticks, snaps)
+	go tickDriving(10, ticks)
+
+	index := uint(0)
+	for s := range snaps {
+		file, err := os.Create(fmt.Sprintf("/home/honzales/img%d.jpg", index))
+		if err != nil {
+			log.Fatalf("%v\n", err)
+		}
+
+		file.Write(s.Data())
+
+		index++
+	}
+
+	fmt.Printf("Konec streamu")
+}
+
+func tickDriving(count int, ticks chan<- bool) {
+
+	for i := 0; i < count; i++ {
+		time.Sleep(1 * time.Second)
+		ticks <- true
+	}
+
+	close(ticks)
+}
+
+func streamSnapshots(file string, ticks <-chan bool, snapshots chan<- webcam.Snapshot) {
+	device, err := webcam.OpenVideoDevice(file)
 
 	if err != nil {
 		log.Fatalf("%v\n", err)
 	}
 
-	defer file.Close()
+	defer device.Close()
 
-	var bindata []byte = []byte{0xaa, 0x12, 0x56}
+	stream := device.NewStreaming()
 
-	file.Write(bindata)
+	if err := stream.Open(&webcam.DiscreteFrameSize{1280, 960}); err != nil {
+		log.Fatalf("%v\n", err)
+	}
 
-}
+	defer stream.Close()
 
-func printConstants() {
-	fmt.Printf("VIDIOC_QUERYCAP: %v\n", ioctl.VIDIOC_QUERYCAP)
-	fmt.Printf("VIDIOC_ENUM_FMT: %v\n", ioctl.VIDIOC_ENUM_FMT)
-	fmt.Printf("VIDIOC_ENUM_FRAMESIZES: %v\n", ioctl.VIDIOC_ENUM_FRAMESIZES)
-	fmt.Printf("VIDIOC_S_FMT: %v\n", ioctl.VIDIOC_S_FMT)
-	fmt.Printf("VIDIOC_REQBUFS: %v\n", ioctl.VIDIOC_REQBUFS)
-	fmt.Printf("VIDIOC_QUERYBUF: %v\n", ioctl.VIDIOC_QUERYBUF)
-	fmt.Printf("VIDIOC_STREAMON: %v\n", ioctl.VIDIOC_STREAMON)
-	fmt.Printf("VIDIOC_STREAMOFF: %v\n", ioctl.VIDIOC_STREAMOFF)
-	fmt.Printf("VIDIOC_DQBUF: %v\n", ioctl.VIDIOC_DQBUF)
-	fmt.Printf("VIDIOC_QBUF: %v\n", ioctl.VIDIOC_QBUF)
+	for range ticks {
+		fmt.Printf("snapshot\n")
 
-	fmt.Printf("V4L2_PIX_FMT_MJPEG: %v\n", v4l2.V4L2_PIX_FMT_MJPEG)
+		snap, err := stream.Snapshot()
+
+		if err != nil {
+			close(snapshots)
+			log.Fatalf("%v\n", err)
+		}
+
+		snapshots <- snap
+	}
+
+	close(snapshots)
 }
 
 func takeSnapshot(file string) {
@@ -58,44 +94,20 @@ func takeSnapshot(file string) {
 	defer device.Close()
 
 	ch := make(chan webcam.Snapshot)
-
 	go device.TakeSnapshotChan(&webcam.DiscreteFrameSize{1280, 960}, ch)
 
 	for s := range ch {
-		fmt.Println("Mam snapshot....")
-
-		file, err := os.Create("/home/honzales/cam1.jpg")
-		if err != nil {
-			log.Fatalf("%v\n", err)
-		}
-
-		defer file.Close()
-
-		file.Write(s.Data())
-	}
-
-	/*
-		snapshot, err := device.TakeSnapshot(&webcam.DiscreteFrameSize{1280, 960})
-		if err != nil {
-			log.Fatalf("%v\n", err)
-		}
-
-		fmt.Printf("Mam obrazek o velikosti %dB\n", snapshot.Length())
+		fmt.Printf("Mam obrazek o velikosti %dB\n", s.Length())
 
 		outfile, err := os.Create("/home/honzales/snapshot.jpg")
+		defer outfile.Close()
+
 		if err != nil {
 			log.Fatalf("%v\n", err)
 		}
 
-		defer outfile.Close()
-
-		//fmt.Printf("Zapisuju data do souboru\n")
-
-		//fmt.Printf("%x", snapshot.Data())
-
-		binary.Write(outfile, binary.LittleEndian, snapshot.Data())
-		//fmt.Printf("Hotovo\n")*/
-
+		outfile.Write(s.Data())
+	}
 }
 
 func printAllFrameSizes(file string) {

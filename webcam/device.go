@@ -41,6 +41,10 @@ func (d *device) TakeSnapshotChan(frameSize *DiscreteFrameSize, ch chan Snapshot
 	d.camera.takeSnapshotChan(frameSize, ch)
 }
 
+func (d *device) NewStreaming() Streaming {
+	return &streaming{file: d.file}
+}
+
 func (d *device) Close() {
 	log.Printf("Closing video device.\n")
 	d.file.Close()
