@@ -51,8 +51,8 @@ type VideoDevice interface {
 	TakeSnapshot(frameSize *DiscreteFrameSize) (Snapshot, error)
 	TakeSnapshotAsync(frameSize *DiscreteFrameSize, handler SnapshotHandler) error
 	TakeSnapshotChan(frameSize *DiscreteFrameSize, ch chan Snapshot)
-	NewStreaming() Streaming
-	Close()
+	Stream(framesize *DiscreteFrameSize, tick chan bool, snapshots chan<- Snapshot)
+	Close() error
 }
 
 type Capability interface {
@@ -88,9 +88,3 @@ type Snapshot interface {
 }
 
 type SnapshotHandler func(snapshot Snapshot)
-
-type Streaming interface {
-	Open(frameSize *DiscreteFrameSize) error
-	Snapshot() (Snapshot, error)
-	Close() error
-}

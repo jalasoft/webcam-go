@@ -1,6 +1,7 @@
 package main
 
 import (
+	"camserver"
 	"fmt"
 	"log"
 	"os"
@@ -10,25 +11,39 @@ import (
 )
 
 func main() {
+
+	camserver.StartServer()
+
 	//writeBinaryFile()
 	//printConstants()
-	streamVideo("/dev/video0")
+	//streamVideo("/dev/video0")
 	//printAllFrameSizes("/dev/video0")
 	//printCapability("/dev/video0")
 	//printFormatSupport("/dev/video0")
 }
 
 func streamVideo(file string) {
+	device, err := webcam.OpenVideoDevice(file)
 
-	ticks := make(chan bool, 10)
+	if err != nil {
+		log.Fatalf("%v\n", err)
+	}
+
+	defer func() {
+		if err2 := device.Close(); err2 != nil {
+			log.Fatalf("%v\n")
+		}
+	}()
+
+	ticks := make(chan bool, 1)
 	snaps := make(chan webcam.Snapshot)
 
-	go streamSnapshots(file, ticks, snaps)
-	go tickDriving(10, ticks)
+	go device.Stream(&webcam.DiscreteFrameSize{1280, 960}, ticks, snaps)
+	go tickDriving(40, ticks)
 
 	index := uint(0)
 	for s := range snaps {
-		file, err := os.Create(fmt.Sprintf("/home/honzales/img%d.jpg", index))
+		file, err := os.Create(fmt.Sprintf("/home/honzales/stream/%d.jpg", index))
 		if err != nil {
 			log.Fatalf("%v\n", err)
 		}
@@ -41,47 +56,20 @@ func streamVideo(file string) {
 	fmt.Printf("Konec streamu")
 }
 
-func tickDriving(count int, ticks chan<- bool) {
+func tickDriving(count int, ticks chan bool) {
 
 	for i := 0; i < count; i++ {
-		time.Sleep(1 * time.Second)
+		time.Sleep(300 * time.Millisecond)
 		ticks <- true
+
+		ok := <-ticks
+
+		if !ok {
+			break
+		}
 	}
 
 	close(ticks)
-}
-
-func streamSnapshots(file string, ticks <-chan bool, snapshots chan<- webcam.Snapshot) {
-	device, err := webcam.OpenVideoDevice(file)
-
-	if err != nil {
-		log.Fatalf("%v\n", err)
-	}
-
-	defer device.Close()
-
-	stream := device.NewStreaming()
-
-	if err := stream.Open(&webcam.DiscreteFrameSize{1280, 960}); err != nil {
-		log.Fatalf("%v\n", err)
-	}
-
-	defer stream.Close()
-
-	for range ticks {
-		fmt.Printf("snapshot\n")
-
-		snap, err := stream.Snapshot()
-
-		if err != nil {
-			close(snapshots)
-			log.Fatalf("%v\n", err)
-		}
-
-		snapshots <- snap
-	}
-
-	close(snapshots)
 }
 
 func takeSnapshot(file string) {

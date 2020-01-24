@@ -39,15 +39,15 @@ type camera struct {
 
 func (s *camera) takeSnapshotChan(frameSize *DiscreteFrameSize, ch chan Snapshot) {
 
-	stream := &streaming{file: s.file}
+	stream := &stream{file: s.file, frameSize: frameSize}
 
-	if err := stream.Open(frameSize); err != nil {
+	if err := stream.open(); err != nil {
 		log.Fatalf("%v\n", err)
 	}
 
-	defer stream.Close()
+	defer stream.close()
 
-	snap, err := stream.Snapshot()
+	snap, err := stream.snapshot()
 
 	if err != nil {
 		panic(fmt.Sprintf("%v\n", err))
@@ -143,20 +143,48 @@ func (s *camera) takeSnapshotAsync(frameSize *DiscreteFrameSize, handler Snapsho
 //STREAMING
 //--------------------------------------------------------------------------------------------------
 
-type streaming struct {
+type stream struct {
 	file      *os.File
 	frameSize *DiscreteFrameSize
 	length    uint32
 	data      []byte
 }
 
-func (s *streaming) Open(frameSize *DiscreteFrameSize) error {
-	log.Printf("Setting up frame size %dx%d", frameSize.Width, frameSize.Height)
-	if err := setFrameSize(s.file.Fd(), frameSize, v4l2.V4L2_PIX_FMT_MJPEG); err != nil {
-		return err
+func (s *stream) stream(ticks chan bool, snapshots chan<- Snapshot) {
+
+	if err := s.open(); err != nil {
+		log.Fatalf("%v\n", err)
 	}
 
-	s.frameSize = frameSize
+	defer func() {
+		if err := s.close(); err != nil {
+			log.Fatalf("%v\n", err)
+		}
+	}()
+
+	defer close(snapshots)
+
+	for range ticks {
+		fmt.Printf("snapshot\n")
+
+		snap, err := s.snapshot()
+
+		if err != nil {
+			close(snapshots)
+			ticks <- false
+			log.Fatalf("%v\n", err)
+		}
+
+		ticks <- true
+		snapshots <- snap
+	}
+}
+
+func (s *stream) open() error {
+	log.Printf("Setting up frame size %dx%d", s.frameSize.Width, s.frameSize.Height)
+	if err := setFrameSize(s.file.Fd(), s.frameSize, v4l2.V4L2_PIX_FMT_MJPEG); err != nil {
+		return err
+	}
 
 	log.Printf("Frame size set up")
 	log.Printf("Requesting buffer")
@@ -191,24 +219,7 @@ func (s *streaming) Open(frameSize *DiscreteFrameSize) error {
 	return nil
 }
 
-/*
-func (s *streaming) Stream(tickChannel <-chan bool, frameChannel chan<- Snapshot) {
-
-	for range tickChannel {
-		snap, err := s.makeSnapshot()
-
-		if err != nil {
-			close(frameChannel)
-			panic(fmt.Sprintf("%v\n", err))
-		}
-
-		frameChannel <- snap
-	}
-
-	close(frameChannel)
-}*/
-
-func (s *streaming) Snapshot() (Snapshot, error) {
+func (s *stream) snapshot() (Snapshot, error) {
 
 	log.Println("Queueing buffer")
 	var buffer v4l2.V4l2Buffer
@@ -230,7 +241,7 @@ func (s *streaming) Snapshot() (Snapshot, error) {
 	return snapshot, nil
 }
 
-func (s *streaming) Close() error {
+func (s *stream) close() error {
 	log.Printf("Releasing mapped memory block")
 	if err := munmapBuffer(s.data); err != nil {
 		return err
