@@ -35,6 +35,7 @@ func StartServer() {
 
 	router.HandleFunc("/camera/", allCamerasHandler).Methods("GET")
 	router.HandleFunc("/camera/{name}", cameraHandler).Methods("GET")
+	router.HandleFunc("/camera/{name}/snapshot", snapshotHandler).Methods("GET")
 
 	server := &http.Server{
 		Addr:    fmt.Sprintf(":%d", parameters.Port),
