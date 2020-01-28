@@ -27,7 +27,7 @@ func cameraHandler(writer http.ResponseWriter, request *http.Request) {
 	vars := mux.Vars(request)
 	name := vars["name"]
 
-	ok, file := parameters.GetVideoFile(name)
+	file, ok := parameters.GetVideoFile(name)
 
 	if !ok {
 		log.Printf("There is no device '%s'", name)

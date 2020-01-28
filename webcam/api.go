@@ -69,6 +69,7 @@ type SupportedFormats interface {
 
 type FrameSizes interface {
 	AllDiscrete(format uint32) ([]DiscreteFrameSize, error)
+	AllDiscreteMJPEG() ([]DiscreteFrameSize, error)
 	SupportsDiscrete(format uint32, width uint32, height uint32) (bool, error)
 }
 

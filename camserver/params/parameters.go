@@ -43,15 +43,15 @@ type Params struct {
 	Files []VideoFile
 }
 
-func (p Params) GetVideoFile(name string) (bool, VideoFile) {
+func (p Params) GetVideoFile(name string) (VideoFile, bool) {
 
 	for _, f := range p.Files {
 		if f.Name == name {
-			return true, f
+			return f, true
 		}
 	}
 
-	return false, VideoFile{}
+	return VideoFile{}, false
 }
 
 //------------------------------------------------------------------------------

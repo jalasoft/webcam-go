@@ -35,6 +35,9 @@ func (f *framesizes) SupportsDiscrete(format uint32, width uint32, height uint32
 
 	return result, nil
 }
+func (f *framesizes) AllDiscreteMJPEG() ([]DiscreteFrameSize, error) {
+	return f.AllDiscrete(v4l2.V4L2_PIX_FMT_MJPEG)
+}
 
 func (f *framesizes) AllDiscrete(format uint32) ([]DiscreteFrameSize, error) {
 
